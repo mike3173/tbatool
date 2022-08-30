@@ -6,7 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"tbatool/models"
+
+	"github.com/mike3173/tbatool/models"
 )
 
 func main() {
