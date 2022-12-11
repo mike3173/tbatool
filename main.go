@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mike3173/tbatool/models"
+	"github.com/mike3173/tbatool/report"
 	"github.com/mike3173/tbatool/services"
 )
 
@@ -25,4 +26,8 @@ func main() {
 	var events []models.Event
 	json.Unmarshal(bodyBytes, &events)
 	fmt.Printf("events: %+v\n", events)
+
+	report.TeamReport(t)
+
+	fmt.Println("report complete")
 }
