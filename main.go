@@ -22,7 +22,7 @@ func main() {
 	json.Unmarshal(bodyBytes, &years_participated)
 	fmt.Printf("years participated: %+v len=%d\n", years_participated, len(years_participated))
 
-	bodyBytes = services.GetTeamEvents("frc3173")
+	bodyBytes = services.GetTeamEventsForYearSimple("frc3173", 2022)
 	var events []models.Event
 	json.Unmarshal(bodyBytes, &events)
 	fmt.Printf("events: %+v\n", events)
