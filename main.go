@@ -27,6 +27,11 @@ func main() {
 	json.Unmarshal(bodyBytes, &events)
 	fmt.Printf("events: %+v\n", events)
 
+	bodyBytes = services.GetMatch("2022nyro", "qm", 6)
+	var match []models.Match
+	json.Unmarshal(bodyBytes, &match)
+	fmt.Printf("match: %+v\n", match)
+
 	report.TeamReport(t)
 
 	fmt.Println("report complete")
