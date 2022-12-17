@@ -4,7 +4,7 @@ type Event struct {
 	Key                 string
 	Name                string
 	Event_code          string
-	Event_type          int
+	Event_type          EventType
 	District            District_List
 	City                string
 	State_prov          string
@@ -29,6 +29,6 @@ type Event struct {
 	Webcasts            []Webcast
 	Division_keys       []string
 	Parent_event_key    string
-	Playoff_type        int
+	Playoff_type        PlayoffType
 	Playoff_type_string string
 }
