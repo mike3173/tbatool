@@ -21,11 +21,11 @@ func TeamReport(team models.Team) {
 	// Set Cell values
 	xlf.SetCellValue(WS_TEAMINFO, "A1", "Team Info")
 	xlf.SetCellValue(WS_TEAMINFO, "A2", "FRC Team:")
-	xlf.SetCellValue(WS_TEAMINFO, "B2", fmt.Sprintf("%d %s", team.Team_number, team.Nickname))
+	xlf.SetCellValue(WS_TEAMINFO, "B2", fmt.Sprintf("%d %s", team.TeamNumber, team.Nickname))
 	xlf.SetCellValue(WS_TEAMINFO, "A3", "Rookie Year:")
-	xlf.SetCellValue(WS_TEAMINFO, "B3", fmt.Sprintf("%d", team.Rookie_year))
+	xlf.SetCellValue(WS_TEAMINFO, "B3", fmt.Sprintf("%d", team.RookieYear))
 	xlf.SetCellValue(WS_TEAMINFO, "A4", "From:")
-	xlf.SetCellValue(WS_TEAMINFO, "B4", fmt.Sprintf("%s %s, %s %s", team.School_name, team.City, team.State_prov, team.Country))
+	xlf.SetCellValue(WS_TEAMINFO, "B4", fmt.Sprintf("%s %s, %s %s", team.SchoolName, team.City, team.StateProv, team.Country))
 
 	// Format Sheet1, named
 	if err := xlf.MergeCell(WS_TEAMINFO, "A1", "B1"); err != nil {
