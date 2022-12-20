@@ -1,8 +1,8 @@
 package models
 
-type District_List struct {
+type DistrictList struct {
 	Abbreviation string
-	Display_name string
+	DisplayName  string
 	Key          string
 	Year         string
 }

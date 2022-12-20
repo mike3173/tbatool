@@ -25,7 +25,7 @@ func TBAMakeRequest(url string) []byte {
 	// fmt.Printf("resp: %+v\n", resp)
 	defer resp.Body.Close()
 	bodyBytes, err := io.ReadAll(resp.Body)
-	fmt.Printf("bodybytes: %+v\n", string(bodyBytes))
+	// fmt.Printf("bodybytes: %+v\n", string(bodyBytes))
 	if err != nil {
 		fmt.Print(err.Error())
 		os.Exit(1)
