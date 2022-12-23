@@ -15,3 +15,19 @@ type Match struct {
 	ScoreBreakdown  MatchScoreBreakdown `json:"score_breakdown"`
 	Videos          []Videos            `json:"videos"`
 }
+
+func (m Match) GetCompLevelKey() int {
+	var rtnValue int = 0
+
+	switch m.CompLevel {
+	case "f":
+		rtnValue = 3
+	case "qf":
+		rtnValue = 2
+	case "qm":
+		rtnValue = 0
+	case "sf":
+		rtnValue = 1
+	}
+	return rtnValue
+}

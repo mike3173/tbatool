@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/mike3173/tbatool/models"
 	"github.com/mike3173/tbatool/report"
@@ -31,11 +32,29 @@ func main() {
 	var matches []models.Match
 	err := json.Unmarshal(bodyBytes, &matches)
 	if err != nil {
-		fmt.Println(err)
-		return
+		panic(err)
 	} else {
+		var headerLine bool = false
+		var outFileName string 
+
 		for i := 0; i < len(matches); i++ {
-			report.MatchReportCsv(matches[i])
+			if !headerLine {
+				outFileName = matches[i].EventKey + "_match_data.csv"
+				f, err := os.Create(outFileName)
+				if err != nil {
+					panic(err)
+				}
+
+				n, err := f.WriteString(report.GetMatchHeaderLine())
+				if err != nil {
+					panic(err)
+				}
+				fmt.Printf("wrote %d header bytes\n", n)
+				headerLine = true
+				f.Sync()
+				f.Close()
+			}
+			report.MatchReportCsv(outFileName, matches[i])
 		}
 	}
 
