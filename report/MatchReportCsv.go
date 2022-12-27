@@ -22,7 +22,7 @@ func isInList(element string, list []string) bool {
 	return result
 }
 
-func MatchReportCsv(fileName string, match models.Match) {
+func MatchReportCsv(fileName string, match models.Match) int {
 	var dataLine string
 	var alliance string = "blue"
 	var lines int = 0
@@ -44,7 +44,6 @@ func MatchReportCsv(fileName string, match models.Match) {
 			panic(err)
 		}
 		lines++
-		fmt.Printf("%s", dataLine)
 	}
 
 	alliance = "red"
@@ -62,9 +61,9 @@ func MatchReportCsv(fileName string, match models.Match) {
 		}
 		lines++
 	}
-	fmt.Printf("wrote %d lines of data\n", lines)
 	f.Sync()
 	f.Close()
+	return lines
 }
 
 func GetMatchHeaderLine() string {

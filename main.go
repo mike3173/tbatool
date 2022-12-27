@@ -28,14 +28,15 @@ func main() {
 	// json.Unmarshal(bodyBytes, &events)
 	// fmt.Printf("events: %+v\n\n", events)
 
-	var bodyBytes []byte = services.GetEventMatches("2022nyro")
+	var bodyBytes []byte = services.GetEventMatches("2022ohcl")
 	var matches []models.Match
 	err := json.Unmarshal(bodyBytes, &matches)
 	if err != nil {
 		panic(err)
 	} else {
 		var headerLine bool = false
-		var outFileName string 
+		var outFileName string
+		var lines int = 0
 
 		for i := 0; i < len(matches); i++ {
 			if !headerLine {
@@ -49,13 +50,14 @@ func main() {
 				if err != nil {
 					panic(err)
 				}
-				fmt.Printf("wrote %d header bytes\n", n)
+				fmt.Printf("wrote header (%d bytes)\n", n)
 				headerLine = true
 				f.Sync()
 				f.Close()
 			}
-			report.MatchReportCsv(outFileName, matches[i])
+			lines += report.MatchReportCsv(outFileName, matches[i])
 		}
+		fmt.Printf("wrote %d lines of data\n", lines)
 	}
 
 	// bodyBytes []byte = services.GetMatch("2022nyro", "qm", 43)
