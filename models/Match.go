@@ -31,3 +31,19 @@ func (m Match) GetCompLevelKey() int {
 	}
 	return rtnValue
 }
+
+func (m Match) GetCompLevelString() string {
+	var rtnValue string = "unknown"
+
+	switch m.CompLevel {
+	case "f":
+		rtnValue = "final"
+	case "qf":
+		rtnValue = "quarterfinal"
+	case "qm":
+		rtnValue = "qualification"
+	case "sf":
+		rtnValue = "semifinal"
+	}
+	return rtnValue
+}
