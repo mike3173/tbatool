@@ -17,22 +17,28 @@ func main() {
 		os.Exit(0)
 	}
 	cmdArg := os.Args[1]
+	reportLine := ""
 
 	switch cmdArg {
 	case "event:matches":
 		eventArg := os.Args[2]
-		fmt.Println("Getting matches for event " + eventArg)
+		fmt.Println("Getting Matches for Event " + eventArg)
+		reportLine = fmt.Sprintf("Event Matches for %s", eventArg)
 		getEventMatches(eventArg)
 	case "team:history":
 		teamArg := os.Args[2]
-		fmt.Println("Getting history for team " + strings.TrimPrefix(teamArg, "frc"))
+		if !strings.HasPrefix(teamArg, "frc") {
+			teamArg = "frc" +teamArg
+		}
+		fmt.Println("Getting Team History for " + strings.TrimPrefix(teamArg, "frc"))
+		reportLine = fmt.Sprintf("Team History for %s", strings.TrimPrefix(teamArg, "frc"))
 		getTeamHistory(teamArg)
 	case "help":
 		usage("help")
 	default:
 		usage("unknown command")
 	}
-	fmt.Println("report complete")
+	fmt.Printf("%s complete\n", reportLine)
 }
 
 func usage(description string) {
