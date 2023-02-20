@@ -5,4 +5,5 @@ type TeamHistory struct {
 	YearsParticipated []int
 	Events            []Event
 	Matches           []Match
+	Awards            []Award
 }

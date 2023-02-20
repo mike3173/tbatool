@@ -11,9 +11,16 @@ const GETTEAMEVENTSSIMPLEURL string = "https://www.thebluealliance.com/api/v3/te
 const GETTEAMEVENTSYEARURL string = "https://www.thebluealliance.com/api/v3/team/%s/events/%d"
 const GETTEAMEVENTSYEARSIMPLEURL string = "https://www.thebluealliance.com/api/v3/team/%s/events/%d/simple"
 const GETTEAMEVENTSMATCHES string = "https://www.thebluealliance.com/api/v3/team/%s/event/%s/matches"
+const GETTEAMAWARDS string = "https://www.thebluealliance.com/api/v3/team/%s/awards"
 
 func GetTeamInfo(teamKey string) []byte {
 	var url string = fmt.Sprintf(GETTEAMURL, teamKey)
+	var bodyBytes []byte = TBAMakeRequest(url)
+	return bodyBytes
+}
+
+func GetTeamAwards(teamKey string) []byte {
+	var url string = fmt.Sprintf(GETTEAMAWARDS, teamKey)
 	var bodyBytes []byte = TBAMakeRequest(url)
 	return bodyBytes
 }

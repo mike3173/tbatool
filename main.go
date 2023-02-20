@@ -20,6 +20,14 @@ func main() {
 	reportLine := ""
 
 	switch cmdArg {
+	case "team:awards":
+		teamArg := os.Args[2]
+		if !strings.HasPrefix(teamArg, "frc") {
+			teamArg = "frc" +teamArg
+		}
+		fmt.Println("Getting Awards for Team " + strings.TrimPrefix(teamArg, "frc"))
+		reportLine = fmt.Sprintf("Award History for Team %s", strings.TrimPrefix(teamArg, "frc"))
+		getTeamAwards(teamArg)
 	case "event:matches":
 		eventArg := os.Args[2]
 		fmt.Println("Getting Matches for Event " + eventArg)
@@ -112,19 +120,19 @@ func getTeamHistory(team string) {
 			}
 		}
 	}
-	// bodyBytes, err := json.Marshal(th)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Printf("team: %+v\n", string(bodyBytes))
+
+	bodyBytes = services.GetTeamAwards(team)
+	json.Unmarshal(bodyBytes, &th.Awards)
 
 	fmt.Println("Writing report ...")
 	report.TeamReport(th)
 }
 
-// func getTeamEventsForYear(team string, year int) {
-// 	var bodyBytes = services.GetTeamEventsForYear(team, year)
-// 	var events []models.Event
-// 	json.Unmarshal(bodyBytes, &events)
-// 	fmt.Printf("%d events: %+v\n", year, events)
-// }
+func getTeamAwards(team string) {
+	var bodyBytes = services.GetTeamAwards(team)
+	var ta []models.Award
+	json.Unmarshal(bodyBytes, &ta)
+
+	// fmt.Printf("%+v\n", string(bodyBytes))
+	fmt.Printf("%+v\n", ta)
+}

@@ -15,6 +15,7 @@ const WS_TEAMINFO = "team_info"
 const WS_EVENT_PARTICIPATION = "event_participation"
 const WS_HISTORICAL_MATCHES = "historical_matches"
 const WS_HISTORICAL_DATA = "historical_data"
+const WS_AWARDS = "awards"
 
 func TeamReport(teamHistory models.TeamHistory) {
 	// Create new xlsx file
@@ -25,6 +26,7 @@ func TeamReport(teamHistory models.TeamHistory) {
 	xlf.NewSheet(WS_EVENT_PARTICIPATION)
 	xlf.NewSheet(WS_HISTORICAL_MATCHES)
 	xlf.NewSheet(WS_HISTORICAL_DATA)
+	xlf.NewSheet(WS_AWARDS)
 
 	sheetIndex := xlf.GetSheetIndex(WS_TEAMINFO)
 	formatTeamInfoSheet(teamHistory, sheetIndex, xlf)
@@ -37,6 +39,9 @@ func TeamReport(teamHistory models.TeamHistory) {
 
 	sheetIndex = xlf.GetSheetIndex(WS_HISTORICAL_DATA)
 	formatHistoryDataSheet(teamHistory, sheetIndex, xlf)
+
+	sheetIndex = xlf.GetSheetIndex(WS_AWARDS)
+	formatAwardsSheet(teamHistory, sheetIndex, xlf)
 
 	xlf.SetActiveSheet(xlf.GetSheetIndex(WS_TEAMINFO))
 	// Save and close
@@ -53,6 +58,15 @@ func fixTeamKey(teamKey string) int {
 		panic(err)
 	}
 	return rtnValue
+}
+
+func formatAwardsSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *excelize.File) {
+	var awards []models.Award = teamHistory.Awards
+
+	xlf.SetCellValue(WS_AWARDS, "A1", "YEAR")
+	xlf.SetCellValue(WS_AWARDS, "B1", "EVENT")
+	xlf.SetCellValue(WS_AWARDS, "C1", "AWARD")
+
 }
 
 func formatHistoryDataSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *excelize.File) {
@@ -94,14 +108,12 @@ func formatHistoryDataSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *e
 			partners = matches[i].Alliances.Blue
 			opponents = matches[i].Alliances.Red
 		}
-		fmt.Printf("partners: %+v opponents: %+v score: %d %d\n", partners.TeamKeys, opponents.TeamKeys, partners.Score, opponents.Score)
 		// process partner list
 		for p := 0; p < len(partners.TeamKeys); p++ {
 			partnerTeam := fixTeamKey(partners.TeamKeys[p])
 			if partnerTeam != teamHistory.Team.TeamNumber { // skip over the team whose history we are processing
 				_, exists := histData[partnerTeam]
 				if !exists {
-					fmt.Printf("\tcreating thp object for team %d as partner\n", partnerTeam)
 					histData[partnerTeam] = &models.TeamHistoryPerformance{}
 					histData[partnerTeam].Init(partnerTeam)
 				}
@@ -119,7 +131,6 @@ func formatHistoryDataSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *e
 			opponentTeam := fixTeamKey(opponents.TeamKeys[o])
 			_, exists := histData[opponentTeam]
 			if !exists {
-				fmt.Printf("\tcreating thp object for team %d as opponent\n", opponentTeam)
 				histData[opponentTeam] = &models.TeamHistoryPerformance{}
 				histData[opponentTeam].Init(opponentTeam)
 			}
@@ -181,11 +192,11 @@ func formatHistoricalMatchesSheet(teamHistory models.TeamHistory, sheetIdx int, 
 	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "M1", "PARTNER 2")
 	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "N1", "PARTNER 3")
 	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "O1", "ALLIANCE COLOR")
-	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "P1", "W/L/T")
+	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "P1", "PART W/L/T")
 	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "Q1", "OPPONENT 1")
 	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "R1", "OPPONENT 2")
 	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "S1", "OPPONENT 3")
-	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "T1", "W/L/T2")
+	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "T1", "OPP W/L/T")
 	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "U1", "ALL LOOKUP KEY")
 	var row int = 2 // data starts on row 2
 	for i := 0; i < len(matches); i++ {
