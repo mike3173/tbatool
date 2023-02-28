@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -23,7 +24,7 @@ func main() {
 	case "team:awards":
 		teamArg := os.Args[2]
 		if !strings.HasPrefix(teamArg, "frc") {
-			teamArg = "frc" +teamArg
+			teamArg = "frc" + teamArg
 		}
 		fmt.Println("Getting Awards for Team " + strings.TrimPrefix(teamArg, "frc"))
 		reportLine = fmt.Sprintf("Award History for Team %s", strings.TrimPrefix(teamArg, "frc"))
@@ -36,11 +37,24 @@ func main() {
 	case "team:history":
 		teamArg := os.Args[2]
 		if !strings.HasPrefix(teamArg, "frc") {
-			teamArg = "frc" +teamArg
+			teamArg = "frc" + teamArg
 		}
 		fmt.Println("Getting Team History for " + strings.TrimPrefix(teamArg, "frc"))
 		reportLine = fmt.Sprintf("Team History for %s", strings.TrimPrefix(teamArg, "frc"))
 		getTeamHistory(teamArg)
+	case "list:team:history":
+		listArg := os.Args[2]
+		fileReader, err := os.Open(listArg)
+		if err != nil {
+			panic(err)
+		}
+		scanner := bufio.NewScanner(fileReader)
+		for scanner.Scan() {
+			teamArg := scanner.Text()
+			fmt.Println("Getting Team History for " + strings.TrimPrefix(teamArg, "frc"))
+			getTeamHistory(teamArg)
+		}
+		reportLine = fmt.Sprintf("Team History from file %s", listArg)
 	case "help":
 		usage("help")
 	default:
@@ -93,6 +107,7 @@ func getEventMatches(event string) {
 func getTeamHistory(team string) {
 	var bodyBytes = services.GetTeamInfo(team)
 	var th models.TeamHistory
+	th.Init(team)
 	json.Unmarshal(bodyBytes, &th.Team)
 	fmt.Println("Getting years participated ...")
 
@@ -105,19 +120,47 @@ func getTeamHistory(team string) {
 		json.Unmarshal(bodyBytes, &events)
 		fmt.Printf("Getting events for %d\n", th.YearsParticipated[i])
 		for ii := 0; ii < len(events); ii++ {
-			th.Events = append(th.Events, events[ii])
+			if reportEvent(events[ii]) {
+				fmt.Printf("adding event %s eventType=%s\n", events[ii].Key, events[ii].EventType.String())
+				th.Events = append(th.Events, events[ii])
+			} else {
+				fmt.Printf("skipping event %s eventType=%s\n", events[ii].Key, events[ii].EventType.String())
+			}
 		}
 	}
 
 	for i := 0; i < len(th.Events); i++ {
-		if th.Events[i].EventType >= 0 && th.Events[i].EventType <= 7 {		// skip offseason type events
-			bodyBytes = services.GetTeamEventMatches(team, th.Events[i].Key)
-			var matches []models.Match
-			json.Unmarshal(bodyBytes, &matches)
-			fmt.Printf("Getting matches for event %s\n", th.Events[i].Key)
-			for ii := 0; ii < len(matches); ii++ {
-				th.Matches = append(th.Matches, matches[ii])
+		theEvent := th.Events[i]
+		bodyBytes = services.GetTeamEventMatches(team, theEvent.Key)
+		var matches []models.Match
+		json.Unmarshal(bodyBytes, &matches)
+		fmt.Printf("Getting matches for event %s eventType=%s\n", th.Events[i].Key, th.Events[i].EventType.String())
+		for ii := 0; ii < len(matches); ii++ {
+			m := matches[ii]
+			th.Matches = append(th.Matches, m)
+
+			yr, ok := th.YearlyRecords[theEvent.Year]
+			if !ok {
+				yr.Init(theEvent.Year)
 			}
+			if m.Alliances.IsTeamBlueAlliance(team) {
+				if m.Alliances.Blue.Score > m.Alliances.Red.Score {
+					yr.Wins++
+				} else if m.Alliances.Blue.Score < m.Alliances.Red.Score {
+					yr.Losses++
+				} else {
+					yr.Ties++
+				}
+			} else if m.Alliances.IsTeamRedAlliance(team) {
+				if m.Alliances.Red.Score > m.Alliances.Blue.Score {
+					yr.Wins++
+				} else if m.Alliances.Red.Score < m.Alliances.Blue.Score {
+					yr.Losses++
+				} else {
+					yr.Ties++
+				}
+			}
+			th.YearlyRecords[theEvent.Year] = yr
 		}
 	}
 
@@ -125,7 +168,7 @@ func getTeamHistory(team string) {
 	json.Unmarshal(bodyBytes, &th.Awards)
 
 	fmt.Println("Writing report ...")
-	report.TeamReport(th)
+	report.TeamReportExcel(th)
 }
 
 func getTeamAwards(team string) {
@@ -135,4 +178,13 @@ func getTeamAwards(team string) {
 
 	// fmt.Printf("%+v\n", string(bodyBytes))
 	fmt.Printf("%+v\n", ta)
+}
+
+func reportEvent(event models.Event) bool {
+	var rtnValue bool
+
+	if event.EventType.InSeasonEvent() && event.Year >= 2005 { // skip offseason type events and dDon't report legacy matches before 3v3 model
+		rtnValue = true
+	}
+	return rtnValue
 }

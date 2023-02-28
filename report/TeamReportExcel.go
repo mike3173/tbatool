@@ -16,16 +16,18 @@ const WS_EVENT_PARTICIPATION = "event_participation"
 const WS_HISTORICAL_MATCHES = "historical_matches"
 const WS_HISTORICAL_DATA = "historical_data"
 const WS_AWARDS = "awards"
+const WS_YEARLY_RECORD = "yearly_record_wlt"
 
-func TeamReport(teamHistory models.TeamHistory) {
+func TeamReportExcel(teamHistory models.TeamHistory) {
 	// Create new xlsx file
-	var fname = fmt.Sprintf("%s-historical-performace.xlsx", teamHistory.Team.Key)
+	var fname = fmt.Sprintf("%s-historical-performance.xlsx", teamHistory.Team.Key)
 	xlf := excelize.NewFile()
 
 	xlf.SetSheetName("Sheet1", WS_TEAMINFO) // rename Sheet1
 	xlf.NewSheet(WS_EVENT_PARTICIPATION)
 	xlf.NewSheet(WS_HISTORICAL_MATCHES)
 	xlf.NewSheet(WS_HISTORICAL_DATA)
+	xlf.NewSheet(WS_YEARLY_RECORD)
 	xlf.NewSheet(WS_AWARDS)
 
 	sheetIndex := xlf.GetSheetIndex(WS_TEAMINFO)
@@ -40,6 +42,9 @@ func TeamReport(teamHistory models.TeamHistory) {
 	sheetIndex = xlf.GetSheetIndex(WS_HISTORICAL_DATA)
 	formatHistoryDataSheet(teamHistory, sheetIndex, xlf)
 
+	sheetIndex = xlf.GetSheetIndex(WS_YEARLY_RECORD)
+	formatYearlyRecordSheet(teamHistory, sheetIndex, xlf)
+
 	sheetIndex = xlf.GetSheetIndex(WS_AWARDS)
 	formatAwardsSheet(teamHistory, sheetIndex, xlf)
 
@@ -49,15 +54,34 @@ func TeamReport(teamHistory models.TeamHistory) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	xlf.Close()
 }
 
 func fixTeamKey(teamKey string) int {
 	t := strings.TrimPrefix(teamKey, "frc")
 	rtnValue, err := strconv.Atoi(t)
 	if err != nil {
+		fmt.Println(fmt.Sprintf("ERROR: fixTeamKey(%s) [%s] failed conversion to int", teamKey, t))
 		panic(err)
 	}
 	return rtnValue
+}
+
+func formatYearlyRecordSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *excelize.File) {
+	var yearlyRecord map[int]models.TeamYearlyRecord = teamHistory.YearlyRecords
+
+	xlf.SetCellValue(WS_YEARLY_RECORD, "A1", "YEAR")
+	xlf.SetCellValue(WS_YEARLY_RECORD, "B1", "WINS")
+	xlf.SetCellValue(WS_YEARLY_RECORD, "C1", "LOSSES")
+	xlf.SetCellValue(WS_YEARLY_RECORD, "D1", "TIES")
+	var row int = 2 // data starts on row 2
+    for key, yr := range yearlyRecord {
+        fmt.Println("Key:", key, "=>", "Element:", yr)
+		xlf.SetCellValue(WS_YEARLY_RECORD, fmt.Sprintf("A%d", row), yr.Year)
+		xlf.SetCellValue(WS_YEARLY_RECORD, fmt.Sprintf("B%d", row), yr.Wins)
+		xlf.SetCellValue(WS_YEARLY_RECORD, fmt.Sprintf("C%d", row), yr.Losses)
+		xlf.SetCellValue(WS_YEARLY_RECORD, fmt.Sprintf("D%d", row), yr.Ties)
+    }
 }
 
 func formatAwardsSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *excelize.File) {
@@ -67,6 +91,17 @@ func formatAwardsSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *exceli
 	xlf.SetCellValue(WS_AWARDS, "B1", "EVENT")
 	xlf.SetCellValue(WS_AWARDS, "C1", "AWARD")
 
+	fmt.Printf("Extracting awards data for Team %d\n", teamHistory.Team.TeamNumber)
+	var row int = 2 // data starts on row 2
+
+	for i := 0; i < len(awards); i++ {
+		fmt.Printf("Processing award %d %s, %s %d\n", awards[i].Year, awards[i].EventKey, awards[i].Name, awards[i].AwardType)
+
+		xlf.SetCellValue(WS_AWARDS, fmt.Sprintf("A%d", row), awards[i].Year)     // YEAR
+		xlf.SetCellValue(WS_AWARDS, fmt.Sprintf("B%d", row), awards[i].EventKey)   // EVENT
+		xlf.SetCellValue(WS_AWARDS, fmt.Sprintf("C%d", row), awards[i].GetAwardDescription())    // AWARD
+		row++
+	}
 }
 
 func formatHistoryDataSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *excelize.File) {
@@ -161,7 +196,7 @@ func formatHistoryDataSheet(teamHistory models.TeamHistory, sheetIdx int, xlf *e
 		xlf.SetCellValue(WS_HISTORICAL_DATA, fmt.Sprintf("G%d", row), t.OpponentWins)   // OPPONENT WINS
 		xlf.SetCellValue(WS_HISTORICAL_DATA, fmt.Sprintf("H%d", row), t.OpponentLosses) // OPPONENT LOSSES
 		xlf.SetCellValue(WS_HISTORICAL_DATA, fmt.Sprintf("I%d", row), t.OpponentTies)   // OPPONENT TIES
-		xlf.SetCellValue(WS_HISTORICAL_DATA, fmt.Sprintf("J%d", row), t.TotalPlays)    // TOTAL PLAYED
+		xlf.SetCellValue(WS_HISTORICAL_DATA, fmt.Sprintf("J%d", row), t.TotalPlays)     // TOTAL PLAYED
 		xlf.SetCellValue(WS_HISTORICAL_DATA, fmt.Sprintf("K%d", row), t.TotalWins)      // TOTAL WINS
 		xlf.SetCellValue(WS_HISTORICAL_DATA, fmt.Sprintf("L%d", row), t.TotalLosses)    // TOTAL LOSSES
 		xlf.SetCellValue(WS_HISTORICAL_DATA, fmt.Sprintf("M%d", row), t.TotalTies)      // TOTAL TIES
@@ -200,21 +235,28 @@ func formatHistoricalMatchesSheet(teamHistory models.TeamHistory, sheetIdx int, 
 	xlf.SetCellValue(WS_HISTORICAL_MATCHES, "U1", "ALL LOOKUP KEY")
 	var row int = 2 // data starts on row 2
 	for i := 0; i < len(matches); i++ {
+		fmt.Printf("writing matches for %s\n", matches[i].EventKey)
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("A%d", row+i), matches[i].EventKey)
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("B%d", row+i), fmt.Sprintf("%d-%s", matches[i].GetCompLevelKey(), matches[i].GetCompLevelString()))
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("C%d", row+i), matches[i].MatchNumber)
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("D%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[0]))
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("E%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[1]))
-		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("F%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[2]))
+		if len(matches[i].Alliances.Red.TeamKeys) == 3{
+			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("F%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[2]))
+		}
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("G%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[0]))
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("H%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[1]))
-		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("I%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[2]))
+		if len(matches[i].Alliances.Blue.TeamKeys) == 3 {
+			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("I%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[2]))
+		}
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("J%d", row+i), matches[i].Alliances.Red.Score)
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("K%d", row+i), matches[i].Alliances.Blue.Score)
 		if Contains(matches[i].Alliances.Red.TeamKeys, teamHistory.Team.Key) { // team was red alliance
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("L%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[0]))
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("M%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[1]))
-			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("N%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[2]))
+			if len(matches[i].Alliances.Red.TeamKeys) == 3 {
+				xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("N%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[2]))
+			}
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("O%d", row+i), "RED")
 			if matches[i].WinningAlliance == "red" {
 				xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("P%d", row+i), "W")
@@ -228,11 +270,15 @@ func formatHistoricalMatchesSheet(teamHistory models.TeamHistory, sheetIdx int, 
 			}
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("Q%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[0]))
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("R%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[1]))
-			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("S%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[2]))
+			if len(matches[i].Alliances.Blue.TeamKeys) == 3 {
+				xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("S%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[2]))
+			}
 		} else { // team was blue alliance
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("L%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[0]))
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("M%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[1]))
-			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("N%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[2]))
+			if len(matches[i].Alliances.Blue.TeamKeys) == 3 {
+				xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("N%d", row+i), fixTeamKey(matches[i].Alliances.Blue.TeamKeys[2]))
+			}
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("O%d", row+i), "BLUE")
 			if matches[i].WinningAlliance == "red" {
 				xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("P%d", row+i), "L")
@@ -246,7 +292,9 @@ func formatHistoricalMatchesSheet(teamHistory models.TeamHistory, sheetIdx int, 
 			}
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("Q%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[0]))
 			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("R%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[1]))
-			xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("S%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[2]))
+			if len(matches[i].Alliances.Red.TeamKeys) == 3 {
+				xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("S%d", row+i), fixTeamKey(matches[i].Alliances.Red.TeamKeys[2]))
+			}
 		}
 		xlf.SetCellValue(WS_HISTORICAL_MATCHES, fmt.Sprintf("U%d", row+i), matches[i].Alliances.GetAllianceLookupKey())
 	}

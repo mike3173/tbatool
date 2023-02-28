@@ -5,18 +5,47 @@ type EventType int
 
 // Declare related constants for each event type
 const (
-	Regional            EventType = iota // EnumIndex = 0
-	District                             // EnumIndex = 1
-	DistrictCmp                          // EnumIndex = 2
-	CmpDivision                          // EnumIndex = 3
-	CmpFinals                            // EnumIndex = 4
-	DistrictCmpDivision                  // EnumIndex = 5
-	FOC                                  // EnumIndex = 6
-	Remote                               // EnumIndex = 7
+	Regional            EventType = 0
+	District            EventType = 1
+	DistrictCmp         EventType = 2
+	CmpDivision         EventType = 3
+	CmpFinals           EventType = 4
+	DistrictCmpDivision EventType = 5
+	FOC                 EventType = 6
+	Remote              EventType = 7
 	OffSeason           EventType = 99
 	PreSeason           EventType = 100
 	Unlabeled           EventType = -1
 )
+
+func (e EventType) InSeasonEvent() bool {
+	rtnValue := false
+	switch e {
+	case Regional:
+		rtnValue = true
+	case District:
+		rtnValue = true
+	case DistrictCmp:
+		rtnValue = true
+	case CmpDivision:
+		rtnValue = true
+	case CmpFinals:
+		rtnValue = true
+	case DistrictCmpDivision:
+		rtnValue = true
+	case FOC:
+		rtnValue = true
+	case Remote:
+		rtnValue = true
+	case OffSeason:
+		rtnValue = false
+	case PreSeason:
+		rtnValue = false
+	case Unlabeled:
+		rtnValue = false
+	}
+	return rtnValue
+}
 
 func (e EventType) String() string {
 	if e == OffSeason {

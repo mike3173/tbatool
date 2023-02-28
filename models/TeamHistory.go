@@ -6,4 +6,9 @@ type TeamHistory struct {
 	Events            []Event
 	Matches           []Match
 	Awards            []Award
+	YearlyRecords     map[int]TeamYearlyRecord
+}
+
+func (t *TeamHistory) Init(teamNbr string) {
+	t.YearlyRecords = make(map[int]TeamYearlyRecord)
 }

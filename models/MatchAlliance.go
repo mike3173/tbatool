@@ -28,3 +28,21 @@ func (ma MatchAlliance) GetAllianceLookupKey() string {
 	rtnValue += ":"
 	return rtnValue
 }
+
+func (ma MatchAlliance) IsTeamRedAlliance(team string) bool {
+	for _, v := range ma.Red.TeamKeys {
+		if v == team {
+			return true
+		}
+	}
+	return false
+}
+
+func (ma MatchAlliance) IsTeamBlueAlliance(team string) bool {
+	for _, v := range ma.Blue.TeamKeys {
+		if v == team {
+			return true
+		}
+	}
+	return false
+}
